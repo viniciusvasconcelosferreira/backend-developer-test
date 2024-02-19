@@ -46,11 +46,16 @@ const updateJobValidation = async (req, res, next) => {
     title: 'string',
     description: 'string',
     location: 'string',
-    notes: 'string',
-    status: 'in:draft,published,archived,rejected',
   };
 
-  await validateJob(req, res, next, rules);
+  const validation = new Validator(req.body, rules);
+
+  if (validation.fails()) {
+    const errors = validation.errors.all();
+    return res.status(400).json({ errors });
+  }
+
+  next();
 };
 
 module.exports = {

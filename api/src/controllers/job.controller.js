@@ -1,4 +1,5 @@
 const { pool } = require('../../config/db.config');
+const StatusTypes = require('../enums/statusTypes');
 
 const getAllJobs = async (req, res) => {
   try {
@@ -53,11 +54,22 @@ const addJob = async (req, res) => {
 
 const updateJob = async (req, res) => {
   const job_id = req.params.id;
-  const { title, description, location, notes, status } = req.body;
-
+  const { title, description, location } = req.body;
   const updateFields = [];
   const params = [];
   let index = 1;
+
+  const { rows: jobs } = await pool.query('SELECT status FROM jobs WHERE id = $1', [job_id]);
+
+  if (jobs.length === 0) {
+    return res.status(404).json({ error: 'Emprego não encontrado' });
+  }
+
+  const currentStatus = jobs[0].status;
+
+  if (currentStatus !== StatusTypes.DRAFT) {
+    return res.status(422).json({ error: 'Não é possível atualizar o emprego porque não está no status "draft"' });
+  }
 
   if (title !== undefined) {
     updateFields.push(`title = $${index}`);
@@ -74,18 +86,6 @@ const updateJob = async (req, res) => {
   if (location !== undefined) {
     updateFields.push(`location = $${index}`);
     params.push(location);
-    index++;
-  }
-
-  if (notes !== undefined) {
-    updateFields.push(`notes = $${index}`);
-    params.push(notes);
-    index++;
-  }
-
-  if (status !== undefined) {
-    updateFields.push(`status = $${index}`);
-    params.push(status);
     index++;
   }
 
@@ -109,16 +109,87 @@ const updateJob = async (req, res) => {
   }
 };
 
+const publishJob = async (req, res) => {
+  const job_id = req.params.id;
+
+  try {
+    const { rows: jobs } = await pool.query('SELECT status FROM jobs WHERE id = $1', [job_id]);
+
+    if (jobs.length === 0) {
+      return res.status(404).json({ error: 'Emprego não encontrado' });
+    }
+
+    const currentStatus = jobs[0].status;
+
+    if (currentStatus !== StatusTypes.DRAFT) {
+      return res.status(422).json({ error: 'Não é possível publicar o emprego porque não está no status "draft"' });
+    }
+
+    const { rowCount } = await pool.query('UPDATE jobs SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *', [StatusTypes.PUBLISHED, job_id]);
+
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Emprego não encontrado' });
+    }
+
+    res.status(200).json({ message: 'Emprego publicado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao publicar emprego:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+const archiveJob = async (req, res) => {
+  const job_id = req.params.id;
+
+  try {
+    const { rows: jobs } = await pool.query('SELECT status FROM jobs WHERE id = $1', [job_id]);
+
+    if (jobs.length === 0) {
+      return res.status(404).json({ error: 'Emprego não encontrado' });
+    }
+
+    const currentStatus = jobs[0].status;
+
+    if (currentStatus !== StatusTypes.PUBLISHED) {
+      return res.status(422).json({ error: 'Não é possível arquivar o emprego porque não está no status "published"' });
+    }
+
+    const { rowCount } = await pool.query('UPDATE jobs SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *', [StatusTypes.ARCHIVED, job_id]);
+
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Emprego não encontrado' });
+    }
+
+    res.status(200).json({ message: 'Emprego arquivado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao publicar emprego:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
 const deleteJob = async (req, res) => {
   const job_id = req.params.id;
 
   try {
-    const result = await pool.query('DELETE FROM jobs WHERE id = $1 RETURNING *', [job_id]);
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Emprego não encontrado' });
-    } else {
-      res.status(200).json({ message: 'Emprego excluído com sucesso' });
+    const { rows: jobs } = await pool.query('SELECT status FROM jobs WHERE id = $1', [job_id]);
+
+    if (jobs.length === 0) {
+      return res.status(404).json({ error: 'Emprego não encontrado' });
     }
+
+    const currentStatus = jobs[0].status;
+
+    if (currentStatus !== StatusTypes.DRAFT) {
+      return res.status(422).json({ error: 'Não é possível excluir o emprego porque não está no status "draft"' });
+    }
+
+    const { rowCount } = await pool.query('DELETE FROM jobs WHERE status = $1 AND id = $2 RETURNING *', [StatusTypes.DRAFT, job_id]);
+
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Emprego não encontrado' });
+    }
+
+    res.status(200).json({ message: 'Emprego excluído com sucesso' });
   } catch (error) {
     console.error('Erro ao excluir emprego:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -128,12 +199,12 @@ const deleteJob = async (req, res) => {
 
 const deleteAllJobs = async (req, res) => {
   try {
-    const result = await pool.query('DELETE FROM jobs RETURNING *');
+    const result = await pool.query('DELETE FROM jobs WHERE status = $1 RETURNING *', [StatusTypes.DRAFT]);
 
     if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Nenhum emprego encontrado para excluir' });
+      res.status(404).json({ error: 'Nenhum rascunho de emprego encontrado para excluir' });
     } else {
-      res.status(200).json({ message: 'Todos os empregos foram excluídos com sucesso' });
+      res.status(200).json({ message: 'Todos os rascunhos de emprego foram excluídos com sucesso' });
     }
   } catch (error) {
     console.error('Erro ao excluir todos os empregos:', error);
@@ -142,5 +213,5 @@ const deleteAllJobs = async (req, res) => {
 };
 
 module.exports = {
-  getAllJobs, searchJobs, getJobById, addJob, updateJob, deleteJob, deleteAllJobs,
+  getAllJobs, searchJobs, getJobById, addJob, updateJob, publishJob, archiveJob, deleteJob, deleteAllJobs,
 };
