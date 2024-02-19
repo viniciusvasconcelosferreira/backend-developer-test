@@ -1,0 +1,36 @@
+{
+  "name": "backend-developer-test",
+  "version": "1.0.0",
+  "description": "teste",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server",
+    "dev": "nodemon --exec sucrase-node server.js"
+  },
+  "repository": "https://github.com/viniciusvasconcelosferreira/backend-developer-test.git",
+  "author": "Vinicius Vasconcelos Ferreira",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.4",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
+    "prettier": "^3.2.5",
+    "validatorjs": "^3.22.1"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "cross-env": "^7.0.3",
+    "express-list-endpoints": "^6.0.0",
+    "nodemon": "^3.0.3",
+    "sucrase": "^3.35.0"
+  }
+}
