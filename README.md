@@ -1,80 +1,188 @@
-# Backend Developer Technical Assessment
+# Job Management API (Plooral)
 
-## Welcome!
+## Introduction
 
-We're excited to have you participate in our Backend Developer technical assessment. This test is designed to gauge your expertise in backend development, with a focus on architectural and organizational skills. Below, you'll find comprehensive instructions to set up and complete the project. Remember, completing every step is not mandatory; some are optional but can enhance your application.
+This project is a Node.js API developed as part of the technical assessment for backend developers at Plooral. The
+objective is to create an API for managing job advertisements.
 
-## Assessment Overview
+## Project Structure
 
-Your task is to develop a NodeJS API for a job posting management application. Analyze the application details and use cases, and translate them into functional endpoints.
+```
+/api
+  /src
+    /controllers           # Controllers handling API requests
+    /enums                 # Enumerations/constants
+    /middleware            # Middleware functions
+    /routes                # Route definitions
+    /services              # Services for handling business logic
+  /config
+    db.config.js           # Database configuration
+/ddl
+   models.sql             # SQL file containing database schema
+/docs
+   Insomnia_2024-02-20.json  # Insomnia workspace for API testing
+```
 
-### Application Components
+This structure organizes the project into clear modules for controllers, enums, middleware, routes, and services, with a
+separate directory for database configuration and SQL schema definitions. Additionally, the `docs` directory contains an
+Insomnia workspace file for testing the API endpoints.
 
-Your solution should incorporate the following components and libraries:
+## Documentation
 
-1. **Relational Database**: Utilize a SQL database (PostgreSQL 16) with two tables (`companies` and `jobs`). The DDL script in the `ddl` folder of this repository initializes these tables. The `companies` table is pre-populated with fictitious records, which you should not modify. Focus on managing records in the `jobs` table. You don't need to worry about setting up the database, consider the database is already running in the cloud. Your code only needs to handle database connections. To test your solution, use your own database running locally or in the server of your choice.
+### Routes
 
-2. **REST API**: Develop using NodeJS (version 20) and ExpressJS. This API will manage the use cases described below.
+#### Companies
 
-3. **Serverless Environment**: Implement asynchronous, event-driven logic using AWS Lambda and AWS SQS for queue management.
+- **GET /api/v1/companies**: Retrieve all companies.
+- **POST /api/v1/companies**: Create a new company.
+- **DELETE /api/v1/companies**: Delete all companies.
+- **GET /api/v1/companies/search**: Search for companies.
 
-4. **Job Feed Repository**: Integrate a job feed with AWS S3. This feed should periodically update a JSON file reflecting the latest job postings.
+- **GET /api/v1/companies/:id**: Retrieve a specific company by ID.
+- **PUT /api/v1/companies/:id**: Update a specific company by ID.
+- **DELETE /api/v1/companies/:id**: Delete a specific company by ID.
 
-### User Actions
+#### Jobs
 
-Convert the following use cases into API endpoints:
+- **GET /api/v1/job**: Retrieve all jobs.
+- **POST /api/v1/job**: Create a new job.
+- **DELETE /api/v1/job**: Delete all jobs.
+- **GET /api/v1/job/search**: Search for jobs.
 
-- `GET /companies`: List existing companies.
-- `GET /companies/:company_id`: Fetch a specific company by ID.
-- `POST /job`: Create a job posting draft.
-- `PUT /job/:job_id/publish`: Publish a job posting draft.
-- `PUT /job/:job_id`: Edit a job posting draft (title, location, description).
-- `DELETE /job/:job_id`: Delete a job posting draft.
-- `PUT /job/:job_id/archive`: Archive an active job posting.
+- **GET /api/v1/job/:id**: Retrieve a specific job by ID.
+- **PUT /api/v1/job/:id**: Update a specific job by ID.
+- **DELETE /api/v1/job/:id**: Delete a specific job by ID.
 
-### Integration Features
+- **PUT /api/v1/job/:id/publish**: Publish a specific job by ID.
+- **PUT /api/v1/job/:id/archive**: Archive a specific job by ID.
 
-- Implement a `GET /feed` endpoint to serve a job feed in JSON format, containing published jobs (column `status = 'published'`). Use a caching mechanism to handle high traffic, fetching data from an S3 file updated periodically by an AWS Lambda function. The feed should return the job ID, title, description, company name and the date when the job was created. This endpoint should not query the database, the content must be fetched from S3.
-- This endpoint receives a massive number of requests every minute, so the strategy here is to implement a simple cache mechanism that will fetch a previously stored JSON file containing the published jobs and serve the content in the API. You need to implement a serverless component using AWS Lambda, that will periodically query the published jobs and store the content on S3. The `GET /feed` endpoint should fetch the S3 file and serve the content. You don't need to worry about implementing the schedule, assume it is already created using AWS EventBridge. You only need to create the Lambda component, using NodeJS 20 as a runtime.
+#### Feed
 
-### Extra Feature (Optional)
+- **GET /api/v1/feed**: Get a feed of published jobs.
 
-- **Job Moderation**: using artificial intelligence, we need to moderate the job content before allowing it to be published, to check for potential harmful content.
-Every time a user requests a job publication (`PUT /job/:job_id/publish`), the API should reply with success to the user, but the job should not be immediately published. It should be queued using AWS SQS, feeding the job to a Lambda component.
-Using OpenAI's free moderation API, create a Lambda component that will evaluate the job title and description, and test for hamrful content. If the content passes the evaluation, the component should change the job status to `published`, otherwise change to `rejected` and add the response from OpenAI API to the `notes` column.
+## Technologies Used
 
-### Bonus Questions
+- Node.js
+- Express.js
+- PostgreSQL
+- AWS (S3, Lambda, SQS)
+- OpenAI API
 
-1. Discuss scalability solutions for the job moderation feature under high load conditions. Consider that over time the system usage grows significantly, to the point where we will have thousands of jobs published every hour. Consider the API will be able to handle the requests, but the serverless component will be overwhelmed with requests to moderate the jobs. This will affect the database connections and calls to the OpenAI API. How would you handle those issues and what solutions would you implement to mitigate the issues?
-2. Propose a strategy for delivering the job feed globally with sub-millisecond latency. Consider now that we need to provide a low latency endpoint that can serve the job feed content worldwide. Using AWS as a cloud provider, what technologies would you need to use to implement this feature and how would you do it?
+## Requirements
 
-## Instructions
+- Node.js installed
+- PostgreSQL database
+- AWS account with necessary services configured
 
-1. Fork this repository and create a branch named after yourself.
-2. Develop the solution in your branch.
-3. Use your AWS account or other environment of your choice to test and validate your solution.
-4. Update the README with setup and execution instructions.
-5. Complete your test by sending a message through the Plooral platform with your repository link and branch name.
+## How to Run the Project
 
-## Evaluation Criteria
+1. **Install Dependencies**: First, make sure you have Node.js and npm installed on your machine. Then, navigate to the
+   project directory and run the following command to install all dependencies:
+    - Using Yarn:
+      ```bash
+      yarn install
+      ```
+    - Using npm:
+      ```bash
+      npm install
+      ```
 
-We will assess:
+2. **Set Environment Variables**: Create a `.env` file in the root directory of the project and add the following
+   environment variables:
 
-- Knowledge of JavaScript, Node.js, Express.js.
-- Proficiency with serverless components (Lambda, SQS).
-- Application structure and layering.
-- Effective use of environment variables.
-- Implementation of unit tests, logging, and error handling.
-- Documentation quality and code readability.
-- Commit history and overall code organization.
+   ```plaintext
+   NODE_ENV=development
+   PORT=5000
+   DATABASE_URL=postgresql://{user}:{password}@{host}:{port}/{database}
+   OPENAI_API_KEY={YOUR_PERSONAL_OPENAI_API_KEY}
+   AWS_S3_BUCKET={YOUR_BUCKET_S3}
+   AWS_S3_KEY={NAME_YOUR_JSON_FILE_S3}
+   AWS_SQS_URL={YOUR_QUEUE_URL}
+   ```
 
-Good luck, and we're looking forward to seeing your innovative solutions!
-Implementation of the user actions and integration features is considered mandatory for the assessment. The extra feature and the bonus questions are optional, but we encourage you to complete them as well, it will give you an additional edge over other candidates.
+   Replace `{user}`, `{password}`, `{host}`, `{port}`, and `{database}` in the `DATABASE_URL` with your PostgreSQL
+   database credentials. Also, replace `{YOUR_PERSONAL_OPENAI_API_KEY}`, `{YOUR_BUCKET_S3}`, `{NAME_YOUR_JSON_FILE_S3}`,
+   and `{YOUR_QUEUE_URL}` with your specific values.
 
-## A Note on the Use of AI Tools
+3. **Run the Project**: Once you've set up the environment variables, you can start the development server by running:
 
-In today's evolving tech landscape, AI tools such as ChatGPT and GitHub Copilot have become valuable resources for developers. We recognize the potential of these tools in aiding problem-solving and coding. While we do not prohibit the use of AI in this assessment, we encourage you to primarily showcase your own creativity and problem-solving skills. Your ability to think critically and design solutions is what we're most interested in.
+    - Using Yarn:
+      ```bash
+      yarn start
+      ```
+    - Using npm:
+      ```bash
+      npm start
+      ```
 
-That said, if you do choose to utilize AI tools, we would appreciate it if you could share details about this in your submission. Include the prompts you used, how you interacted with the AI, and how it influenced your development process. This will give us additional insight into your approach to leveraging such technologies effectively.
+   This will start the server on the specified port (default is 5000) in the development environment.
 
-Remember, this assessment is not just about getting to the solution, but also about demonstrating your skills, creativity, and how you navigate and integrate the use of emerging technologies in your work.
+4. **Test the Endpoints**: You can now test the API endpoints using tools like Postman or cURL. Make requests to the
+   defined routes to interact with the application.
+
+5. **Optional**: If you want to run the project in a different environment (e.g., production), you can modify
+   the `NODE_ENV` variable in the `.env` file accordingly.
+
+That's it! You've successfully set up and run the project using environment variables defined in the `.env` file. Let me
+know if you need further assistance!
+
+## Bonus Questions
+
+### Scalability Solutions for Job Moderation Feature
+
+1. **Architecture:**
+
+    - **Microservices:** Divide the system into smaller, independent services, each responsible for a specific task (
+      e.g.,
+      text moderation, image analysis, etc.). This allows each service to scale individually according to demand.
+    - **Caching:** Use caching to store frequently moderated results. This reduces the number of calls to the database
+      and
+      the OpenAI API, decreasing response time.
+
+2. **Database:**
+
+    - **Horizontal scalability:** Use a database that can be scaled horizontally (e.g., NoSQL, sharding), adding more
+      servers to handle increased load.
+    - **Query optimization:** Optimize database queries to reduce response time. Use indexes and query caches to improve
+      performance.
+
+3. **OpenAI API:**
+
+    - **Rate limiting:** Implement rate limiting for calls to the OpenAI API, controlling the number of requests per
+      second.
+    - **API caching:** Use a cache to store results from calls to the OpenAI API and reduce the number of requests.
+
+4. **Monitoring:**
+
+    - **Performance monitoring:** Monitor system performance in real-time, identifying bottlenecks and points of failure
+      through monitoring tools like Prometheus or Grafana.
+    - **Alerts:** Set up alerts to notify the team when the system is under excessive load, allowing the team to take
+      proactive measures to avoid issues.
+
+### Strategy for Global Job Feed Delivery with Sub-Millisecond Latency
+
+1. **Architecture:**
+
+    - **Content Delivery Network (CDN):** Use a global CDN, such as AWS CloudFront, to distribute the job feed content
+      to servers worldwide. This reduces latency for users in different regions.
+    - **Global Load Balancing:** Use a global load balancer, such as AWS Global Accelerator, to distribute traffic to
+      CDN servers with the lowest latency for each user.
+
+2. **Technologies:**
+
+    - **Amazon ElastiCache for Redis:** Use Redis as an in-memory cache to store the job feed. This reduces response
+      time for user requests.
+    - **Amazon DynamoDB:** Use DynamoDB as a NoSQL database to store job feed metadata. This provides horizontal
+      scalability and high availability.
+
+3. **Implementation:**
+
+    - Store the job feed in **Amazon ElastiCache** for **Redis**.
+    - Store **job feed metadata** in **Amazon DynamoDB**.
+    - Create an **API endpoint** using **AWS Lambda** that retrieves the job feed from **Redis**.
+    - Use **AWS Global Accelerator** to distribute traffic to the **API endpoint**.
+    - Use **AWS CloudFront** to distribute the job feed content to servers worldwide.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
