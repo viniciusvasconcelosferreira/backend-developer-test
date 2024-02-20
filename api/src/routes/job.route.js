@@ -9,6 +9,8 @@ router.get('/job/search', jobController.searchJobs);
 
 router.get('/job/:id', jobController.getJobById);
 
+router.get('/feed', jobController.getFeedJobs);
+
 router.post('/job', jobMiddleware.createJobValidation, jobController.addJob);
 
 router.put('/job/:id', jobMiddleware.updateJobValidation, jobController.updateJob);

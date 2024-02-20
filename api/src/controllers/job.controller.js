@@ -1,5 +1,6 @@
 const { pool } = require('../../config/db.config');
 const StatusTypes = require('../enums/statusTypes');
+const { awsService } = require('../services/awsService');
 
 const getAllJobs = async (req, res) => {
   try {
@@ -36,6 +37,16 @@ const getJobById = async (req, res) => {
     }
   } catch (error) {
     console.error('Erro ao obter emprego por ID:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+const getFeedJobs = async (req, res) => {
+  try {
+    const feedJobs = await awsService.getFileFromS3();
+    res.status(200).json(feedJobs);
+  } catch (error) {
+    console.error('Erro ao obter o feed de trabalhos:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
@@ -125,13 +136,10 @@ const publishJob = async (req, res) => {
       return res.status(422).json({ error: 'Não é possível publicar o emprego porque não está no status "draft"' });
     }
 
-    const { rowCount } = await pool.query('UPDATE jobs SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *', [StatusTypes.PUBLISHED, job_id]);
+    await awsService.sendMessageToSQS(JSON.stringify({ job_id }));
 
-    if (rowCount === 0) {
-      return res.status(404).json({ error: 'Emprego não encontrado' });
-    }
+    return res.status(200).json({ message: 'Emprego enfileirado com sucesso para publicação' });
 
-    res.status(200).json({ message: 'Emprego publicado com sucesso' });
   } catch (error) {
     console.error('Erro ao publicar emprego:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -213,5 +221,5 @@ const deleteAllJobs = async (req, res) => {
 };
 
 module.exports = {
-  getAllJobs, searchJobs, getJobById, addJob, updateJob, publishJob, archiveJob, deleteJob, deleteAllJobs,
+  getAllJobs, searchJobs, getJobById, getFeedJobs, addJob, updateJob, publishJob, archiveJob, deleteJob, deleteAllJobs,
 };
